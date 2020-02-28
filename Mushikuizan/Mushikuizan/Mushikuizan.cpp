@@ -51,6 +51,35 @@ void printQuest(const string& txt, int len)
 	}
 	cout << "\n";
 }
+bool solveAdd(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
+{
+	for (;;) {
+		auto ch = vs[row][++col];
+		if( ch == '*' ) {
+			for (ch = !col ? '1' : '0'; ch <= '9'; ++ch) {
+				vs[row][col] = ch;
+				if( solveAdd(vs, row, col) )
+					return true;
+			}
+			vs[row][col] = '*';
+			return false;		//	解無し
+		}
+		if( ch >= '0' && ch <= '9' ) continue;
+		if( ch == '\0' ) {
+			if( ++row != vs.size() ) {
+				col = -1;
+				continue;
+			}
+			//	全てが確定した場合
+			return checkAdd(vs /*, true*/);
+		}
+		//	上記以外の文字はスキップ
+	}
+}
+bool solveAdd(std::vector<std::string>& vs)
+{
+	return solveAdd(vs, 0, -1);
+}
 void printAddQuest(const vector<string>& vs)
 {
 	int mxlen = 0;
@@ -72,8 +101,14 @@ int main()
 	//
 	vector<string>vs1 = {"45", "**", "48", "*05"};
 	printAddQuest(vs1);
+	if( solveAdd(vs1) ) printAddQuest(vs1);
+	else cout << "can't solve\n";
+	//
 	vector<string>vs2 = {"471", "*74", "885", "*1**"};
 	printAddQuest(vs2);
+	if( solveAdd(vs2) ) printAddQuest(vs2);
+	else cout << "can't solve\n";
+	//
 	//
     std::cout << "OK\n";
 }
