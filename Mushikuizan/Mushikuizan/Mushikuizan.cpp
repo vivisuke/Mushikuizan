@@ -6,6 +6,8 @@
 
 using namespace std;
 
+typedef const char cchar;
+
 bool isMatch(const string &t, int v)		//	計算結果(t) と v がマッチしているか？
 {
 	//return t == to_string(v);
@@ -38,9 +40,11 @@ void test_checkAdd()
 	vector<string>vs4 = {"99", "34", "33"}; assert( !checkAdd(vs4) );
 	vector<string>vs5 = {"12", "34", "56", "102"}; assert( checkAdd(vs5) );
 }
-void printQuest(const string& txt)
+void printQuest(const string& txt, int len)
 {
 	static cchar *digTxt[] = {"０", "１", "２", "３", "４", "５", "６", "７", "８", "９", };
+	if( len > txt.size() )
+		cout << string((len-txt.size())*2, ' ');
 	for(auto ch: txt) {
 		if( isdigit(ch) ) cout << digTxt[ch - '0'];
 		else cout << "□";
@@ -49,11 +53,17 @@ void printQuest(const string& txt)
 }
 void printAddQuest(const vector<string>& vs)
 {
-	for (int i = 0; i != vs.size() - 1; ++i) {
-		printQuest(vs[i]);
+	int mxlen = 0;
+	for(auto& txt: vs)
+		mxlen = max(mxlen, (int)txt.size());
+	for (int i = 0; i < (int)vs.size() - 2; ++i) {
+		printQuest(vs[i], mxlen);
 	}
-	cout << "----------";
-		printQuest(vs.back());
+	cout << "＋";
+	printQuest(vs[vs.size()-2], mxlen-1);
+	cout << string(mxlen*2, '-') << "\n";
+		printQuest(vs.back(), mxlen);
+	cout << "\n";
 }
 int main()
 {
@@ -62,6 +72,8 @@ int main()
 	//
 	vector<string>vs1 = {"45", "**", "48", "*05"};
 	printAddQuest(vs1);
+	vector<string>vs2 = {"471", "*74", "885", "*1**"};
+	printAddQuest(vs2);
 	//
     std::cout << "OK\n";
 }
