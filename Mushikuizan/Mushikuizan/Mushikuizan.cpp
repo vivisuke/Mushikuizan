@@ -6,6 +6,18 @@
 
 using namespace std;
 
+struct Pos {
+public:
+	Pos(int row = 0, int col = 0)
+		: m_row(row)
+		, m_col(col)
+	{
+	}
+public:
+	int		m_row;
+	int		m_col;
+};
+
 random_device g_rd;
 mt19937 g_mt(g_rd());
 
@@ -378,6 +390,110 @@ void genAdd(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, 
 	vs0 = vs;
 	removeGreedyAdd(vs);
 }
+bool isUniqMul(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
+{
+	for (;;) {
+		auto ch = vs[row][++col];
+		if( ch == '*' ) {
+			for (ch = '1'; ch <= '9'; ++ch) {
+				vs[row][col] = ch;
+				isUniqMul(vs, row, col);
+				if( g_cnt > 1 )		//	ユニークで無い場合
+					return false;
+			}
+			vs[row][col] = '*';
+			return false;		//	解無し
+		}
+		if( ch >= '0' && ch <= '9' ) continue;
+		if( ch == '\0' ) {
+			if( ++row < 2 ) {
+				col = -1;
+				continue;
+			}
+			//	A * B が確定した場合
+			if( !checkMul(vs /*, false*/) )
+				return false;
+			if( ++g_cnt > 1 )	//	ユニークでない場合
+				return false;
+			else
+				return true;
+		}
+		//	上記以外の文字はスキップ
+	}
+}
+bool isUniqMul(const vector<string> &vs0)
+{
+	g_cnt = 0;
+	vector<string> vs(vs0);
+	isUniqMul(vs, 0, -1);
+	return g_cnt == 1;
+}
+void removeGreedyMul(vector<string> &vs, double p = 0.0)
+{
+	//	最初に * に出来る位置の一覧を取得し、そこから * にしていく版
+	vector<string> vs2;
+	if( isUniqMul(vs) )
+		vs2 = vs;
+	int cnt = 0;	//	全文字数
+	for(const auto &s : vs)
+		cnt += s.size();
+	int limit = (int)(cnt * p + 0.5);
+	cnt -= limit;
+	for (;;) {
+		vector<Pos>	vpos;	//	虫食いに出来る位置リスト
+		int row = 0;
+		int col = 0;
+		for (;;) {
+			if( vs[row][col] == '\0' ) {
+				if( ++row == vs.size() )		//	-1 for 最後の余りは消さない
+					break;	
+				col = 0;
+				continue;
+			}
+			auto ch = vs[row][col];
+			if( ch >= '0' && ch <= '9' ) {
+				vs[row][col] = '*';
+				if( isUniqMul(vs) )
+					vpos.emplace_back(row, col);
+				vs[row][col] = ch;
+			}
+			++col;
+		}
+		//vpos.pop_back();		//	最後の余りは消さない
+		if( vpos.empty() )
+			break;
+		int r = g_mt() % vpos.size();
+		row = vpos[r].m_row;
+		col = vpos[r].m_col;
+		vs[row][col] = '*';
+		//printMul(vs);
+		vs2 = vs;
+		if( --cnt <= 0 ) break;
+	}
+	//if( !vs2.empty() )
+	//	printMul(vs2);
+}
+void genMul(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B,
+			double p)		//	空欄割合
+{
+	for (;;) {
+		vs.clear();
+		vs.push_back(to_string(A));
+		vs.push_back(to_string(B));
+		int b2 = B;
+		while( b2 ) {
+			int t = b2 % 10;
+			vs.push_back(to_string(A*t));
+			b2 /= 10;
+		}
+		vs.push_back(to_string(A*B));
+		vs0 = vs;
+		removeGreedyMul(vs, p);
+		int cnt = count(vs[0].begin(), vs[0].end(), '*') +
+					count(vs[1].begin(), vs[1].end(), '*');
+		if( cnt >= 2 ) return;
+	}
+}
 int main()
 {
 	test_isMatch();
@@ -426,11 +542,18 @@ int main()
 	if( solveDiv(qd2) ) printDivQuest(qd2);
 	else cout << "can't solve\n\n";
 	//
-	{
+	if( true ) {
 		std::vector<std::string> va0, va;
 		genAdd(va0, va, 123, 456, 789);
 		printAddQuest(va0);
 		printAddQuest(va);
+	}
+	//
+	if( true ) {
+		std::vector<std::string> va0, va;
+		genMul(va0, va, 123, 456, 0.3);
+		printMulQuest(va0);
+		printMulQuest(va);
 	}
 	//
     std::cout << "OK\n";
