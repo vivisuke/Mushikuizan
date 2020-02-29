@@ -6,7 +6,12 @@
 
 using namespace std;
 
+random_device g_rd;
+mt19937 g_mt(g_rd());
+
 typedef const char cchar;
+
+int g_cnt = 0;		//	解の数
 
 bool isMatch(const string &t, int v)		//	計算結果(t) と v がマッチしているか？
 {
@@ -282,6 +287,97 @@ bool solveDiv(std::vector<std::string>& vs)
 {
 	return solveDiv(vs, 0, -1);
 }
+bool isUniqAdd(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
+{
+	for (;;) {
+		auto ch = vs[row][++col];
+		if( ch == '*' ) {
+			for (ch = !col ? '1' : '0'; ch <= '9'; ++ch) {
+				vs[row][col] = ch;
+				isUniqAdd(vs, row, col);
+				if( g_cnt > 1 )		//	ユニークで無い場合
+					return false;
+			}
+			vs[row][col] = '*';
+			return false;		//	解無し
+		}
+		if( ch >= '0' && ch <= '9' ) continue;
+		if( ch == '\0' ) {
+			if( ++row < vs.size() ) {
+				col = -1;
+				continue;
+			}
+			//	A + B + C が確定した場合
+			if( !checkAdd(vs) )
+				return false;
+			if( ++g_cnt > 1 )	//	ユニークでない場合
+				return false;
+			else
+				return true;
+		}
+		//	上記以外の文字はスキップ
+	}
+}
+bool isUniqAdd(const vector<string> &vs0)
+{
+	g_cnt = 0;
+	vector<string> vs(vs0);
+	isUniqAdd(vs, 0, -1);
+	return g_cnt == 1;
+}
+void removeGreedyAdd(vector<string> &vs)
+{
+	for (int i = 0; i != vs[0].size(); ++i) {
+		int r = g_mt() % vs.size();
+		int ix = vs[r].size() - 1 - i;
+		vs[r][ix] = '*';
+	}
+	if( vs.back().size() > vs[1].size() )
+		vs.back()[0] = '*';
+#if	0
+	//	最初に * に出来る位置の一覧を取得し、そこから * にしていく版
+	vector<string> vs2;
+	if( isUniqAdd(vs) )
+		vs2 = vs;
+	for (;;) {
+		vector<Pos>	vpos;	//	虫食いに出来る位置リスト
+		int row = 0;
+		int col = 0;
+		for (;;) {
+			if( vs[row][col] == '\0' ) {
+				if( ++row == vs.size() ) break;
+				col = 0;
+				continue;
+			}
+			auto ch = vs[row][col];
+			if( ch >= '0' && ch <= '9' ) {
+				vs[row][col] = '*';
+				if( isUniqAdd(vs) )
+					vpos.emplace_back(row, col);
+				vs[row][col] = ch;
+			}
+			++col;
+		}
+		if( vpos.empty() )
+			break;
+		int r = g_mt() % vpos.size();
+		row = vpos[r].m_row;
+		col = vpos[r].m_col;
+		vs[row][col] = '*';
+		vs2 = vs;
+	}
+#endif
+}
+void genAdd(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B, int C)
+{
+	vs.clear();
+	vs.push_back(to_string(A));
+	vs.push_back(to_string(B));
+	vs.push_back(to_string(C));
+	vs.push_back(to_string(A+B+C));
+	vs0 = vs;
+	removeGreedyAdd(vs);
+}
 int main()
 {
 	test_isMatch();
@@ -329,6 +425,13 @@ int main()
 	printDivQuest(qd2);
 	if( solveDiv(qd2) ) printDivQuest(qd2);
 	else cout << "can't solve\n\n";
+	//
+	{
+		std::vector<std::string> va0, va;
+		genAdd(va0, va, 123, 456, 789);
+		printAddQuest(va0);
+		printAddQuest(va);
+	}
 	//
     std::cout << "OK\n";
 }
