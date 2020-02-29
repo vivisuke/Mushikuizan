@@ -494,6 +494,112 @@ void genMul(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, 
 		if( cnt >= 2 ) return;
 	}
 }
+bool isUniqDiv(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
+{
+	for (;;) {
+		auto ch = vs[row][++col];
+		if( ch == '*' ) {
+			for (ch = !col ? '1' : '0'; ch <= '9'; ++ch) {
+				vs[row][col] = ch;
+				isUniqDiv(vs, row, col);
+				if( g_cnt > 1 )		//	ユニークで無い場合
+					return false;
+			}
+			vs[row][col] = '*';
+			return false;		//	解無し
+		}
+		if( ch >= '0' && ch <= '9' ) continue;
+		if( ch == '\0' ) {
+			if( ++row < 2 ) {
+				col = -1;
+				continue;
+			}
+			//	A * B が確定した場合
+			if( !checkDiv(vs /*, false*/) )
+				return false;
+			if( ++g_cnt > 1 )	//	ユニークでない場合
+				return false;
+			else
+				return true;
+		}
+		//	上記以外の文字はスキップ
+	}
+}
+bool isUniqDiv(const vector<string> &vs0)
+{
+	g_cnt = 0;
+	vector<string> vs(vs0);
+	isUniqDiv(vs, 0, -1);
+	return g_cnt == 1;
+}
+void removeGreedyDiv(vector<string> &vs, double p)
+{
+	//	最初に * に出来る位置の一覧を取得し、そこから * にしていく版
+	int cnt = 0;	//	全文字数
+	for(const auto &s : vs)
+		cnt += s.size();
+	int limit = (int)(cnt * p + 0.5);
+	cnt -= limit;
+	vector<string> vs2;
+	if( isUniqDiv(vs) )
+		vs2 = vs;
+	for (;;) {
+		vector<Pos>	vpos;	//	虫食いに出来る位置リスト
+		int row = 0;
+		int col = 0;
+		for (;;) {
+			if( vs[row][col] == '\0' ) {
+				if( ++row == vs.size() - 1 ) break;
+				col = 0;
+				continue;
+			}
+			auto ch = vs[row][col];
+			if( ch >= '0' && ch <= '9' ) {
+				vs[row][col] = '*';
+				if( isUniqDiv(vs) )
+					vpos.emplace_back(row, col);
+				vs[row][col] = ch;
+			}
+			++col;
+		}
+		if( vpos.empty() )
+			break;
+		int r = g_mt() % vpos.size();
+		row = vpos[r].m_row;
+		col = vpos[r].m_col;
+		vs[row][col] = '*';
+		vs2 = vs;
+		if( --cnt <= 0 ) break;
+	}
+}
+void genDiv(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B, int R, double p)
+{
+	R %= B;
+	const auto astr = to_string(A);
+	for(;;) {
+		vs.clear();
+		vs.push_back(astr);
+		vs.push_back(to_string(B));
+		int C = A * B + R;
+		vs.push_back(to_string(C));
+		int sc = 1;
+		for (int i = 1; i != astr.size(); ++i) {
+			sc *= 10;
+		}
+		for (int i = 0; i != astr.size(); ++i) {
+			int t = astr[i] - '0';
+			vs.push_back(to_string(B*t));
+			C -= B*t*sc;
+			if( (sc /= 10) == 0 ) sc = 1;
+			vs.push_back(to_string(C/sc));
+		}
+		vs0 = vs;
+		removeGreedyDiv(vs, p);
+		int cnt = count(vs[0].begin(), vs[0].end(), '*') +
+					count(vs[1].begin(), vs[1].end(), '*');
+		if( cnt >= 2 ) return;
+	}
+}
 int main()
 {
 	test_isMatch();
@@ -554,6 +660,13 @@ int main()
 		genMul(va0, va, 123, 456, 0.3);
 		printMulQuest(va0);
 		printMulQuest(va);
+	}
+	//
+	if( true ) {
+		std::vector<std::string> va0, va;
+		genDiv(va0, va, 123, 45, 9, 0.3);
+		printDivQuest(va0);
+		printDivQuest(va);
 	}
 	//
     std::cout << "OK\n";
