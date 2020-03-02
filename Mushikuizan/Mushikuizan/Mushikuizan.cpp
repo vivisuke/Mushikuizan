@@ -151,11 +151,6 @@ bool checkMul(vector<string> &vs , bool fill = false)	//	fill: 答えを埋め�
 #endif
 	return true;
 }
-void test_checkMul()
-{
-	vector<string>vs1 = {"11", "11", "11", "11", "121"}; assert( checkMul(vs1) );
-	vector<string>vs2 = {"55", "55", "275", "275", "3025"}; assert( checkMul(vs1) );
-}
 void printMulQuest(const vector<string>& vs)
 {
 	int mxlen = 0;
@@ -171,6 +166,11 @@ void printMulQuest(const vector<string>& vs)
 	cout << string(mxlen*2, '-') << "\n";
 	printQuest(vs.back(), mxlen);
 	cout << "\n";
+}
+void test_checkMul()
+{
+	vector<string>vs1 = {"11", "11", "11", "11", "121"}; assert( checkMul(vs1) );
+	vector<string>vs2 = {"55", "55", "275", "275", "3025"}; assert( checkMul(vs1) );
 }
 bool solveMul(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
 {
@@ -494,6 +494,38 @@ void genMul(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, 
 		if( cnt >= 2 ) return;
 	}
 }
+bool genMulOnly1(	std::vector<std::string>& vs0,		//	解答
+							std::vector<std::string>& vs,		//	問題
+							int A, int B)
+{
+	vs.clear();
+	vs.push_back(to_string(A));
+	vs.push_back(to_string(B));
+	int b2 = B;
+	while( b2 ) {
+		int t = b2 % 10;
+		vs.push_back(to_string(A*t));
+		b2 /= 10;
+	}
+	vs.push_back(to_string(A*B));
+	vs0 = vs;
+	for (char d = '1'; d <= '9'; ++d) {
+		vs = vs0;
+		for(auto& str: vs) {
+			for(auto& ch: str) {
+				if( ch != d ) ch = '*';
+			}
+		}
+		if( isUniqMul(vs) ) {
+			removeGreedyMul(vs);
+			int cnt = count(vs[0].begin(), vs[0].end(), '*') +
+						count(vs[1].begin(), vs[1].end(), '*');
+			if( cnt != 0 )		//	A*B に '*' が含まれる場合
+				return true;
+		}
+	}
+	return false;
+}
 bool isUniqDiv(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
 {
 	for (;;) {
@@ -600,6 +632,10 @@ void genDiv(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, 
 		if( cnt >= 2 ) return;
 	}
 }
+bool genDivOnly1(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B, int R)
+{
+	return false;
+}
 int main()
 {
 	test_isMatch();
@@ -633,6 +669,24 @@ int main()
 	else cout << "can't solve\n\n";
 #endif
 	//
+#if	0
+	vector<string> qm3 = {"**", "**", "**5", "25*", "2**5"};
+	printMulQuest(qm3);
+	if( solveMul(qm3) ) printMulQuest(qm3);
+	else cout << "can't solve\n\n";
+	//
+	vector<string> qm4 = {"***", "***", "11**", "****", "*11", "**1**"};
+	printMulQuest(qm4);
+	if( solveMul(qm4) ) printMulQuest(qm4);
+	else cout << "can't solve\n\n";
+	//
+	vector<string> qm5 = {"***", "****", "***", "****", "****", "2012", "**24***"};
+	printMulQuest(qm5);
+	if( solveMul(qm5) ) printMulQuest(qm5);
+	else cout << "can't solve\n\n";
+#endif
+	//
+#if	0
 	vector<string> qd0 = {"1*", "49", "6**", "49", "19*", "1*6", "0"};
 	printDivQuest(qd0);
 	if( solveDiv(qd0) ) printDivQuest(qd0);
@@ -668,6 +722,44 @@ int main()
 		printDivQuest(va0);
 		printDivQuest(va);
 	}
+#endif
+	//
+	if( true ) {
+		std::vector<std::string> va0, va;
+		if( genMulOnly1(va0, va, 98, 89) ) {
+			printMulQuest(va0);
+			printMulQuest(va);
+		} else {
+			printMulQuest(va0);
+			cout << "failed to gen quest.\n";
+		}
+	}
+#if	0
+	if( true ) {
+		std::vector<std::string> va0, va;
+		if( genMulOnly1(va0, va, 898, 989) ) {
+			printMulQuest(va0);
+			printMulQuest(va);
+		} else {
+			printMulQuest(va0);
+			cout << "failed to gen quest.\n";
+		}
+	}
+#endif
+#if	0
+	if( true ) {
+		std::vector<std::string> va0, va;
+		genMulOnly1(va0, va, 11, 11);
+		printMulQuest(va0);
+		printMulQuest(va);
+	}
+	if( true ) {
+		std::vector<std::string> va0, va;
+		genMulOnly1(va0, va, 123, 456);
+		printMulQuest(va0);
+		printMulQuest(va);
+	}
+#endif
 	//
     std::cout << "OK\n";
 }
