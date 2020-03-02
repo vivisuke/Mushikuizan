@@ -564,7 +564,7 @@ bool isUniqDiv(const vector<string> &vs0)
 	isUniqDiv(vs, 0, -1);
 	return g_cnt == 1;
 }
-void removeGreedyDiv(vector<string> &vs, double p)
+void removeGreedyDiv(vector<string> &vs, double p = 0)
 {
 	//	最初に * に出来る位置の一覧を取得し、そこから * にしていく版
 	int cnt = 0;	//	全文字数
@@ -632,8 +632,42 @@ void genDiv(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, 
 		if( cnt >= 2 ) return;
 	}
 }
-bool genDivOnly1(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B, int R)
+bool genDivOnly1(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B, int R = 0)
 {
+	R %= B;
+	const auto astr = to_string(A);
+	vs.clear();
+	vs.push_back(astr);
+	vs.push_back(to_string(B));
+	int C = A * B + R;
+	vs.push_back(to_string(C));
+	int sc = 1;
+	for (int i = 1; i != astr.size(); ++i) {
+		sc *= 10;
+	}
+	for (int i = 0; i != astr.size(); ++i) {
+		int t = astr[i] - '0';
+		vs.push_back(to_string(B*t));
+		C -= B*t*sc;
+		if( (sc /= 10) == 0 ) sc = 1;
+		vs.push_back(to_string(C/sc));
+	}
+	vs0 = vs;
+	for (char d = '1'; d <= '9'; ++d) {
+		vs = vs0;
+		for(auto& str: vs) {
+			for(auto& ch: str) {
+				if( ch != d ) ch = '*';
+			}
+		}
+		if( isUniqDiv(vs) ) {
+			removeGreedyDiv(vs);
+			int cnt = count(vs[0].begin(), vs[0].end(), '*') +
+						count(vs[1].begin(), vs[1].end(), '*');
+			if( cnt != 0 )		//	A*B に '*' が含まれる場合
+				return true;
+		}
+	}
 	return false;
 }
 int main()
@@ -724,6 +758,7 @@ int main()
 	}
 #endif
 	//
+#if	0
 	if( true ) {
 		std::vector<std::string> va0, va;
 		if( genMulOnly1(va0, va, 98, 89) ) {
@@ -734,7 +769,6 @@ int main()
 			cout << "failed to gen quest.\n";
 		}
 	}
-#if	0
 	if( true ) {
 		std::vector<std::string> va0, va;
 		if( genMulOnly1(va0, va, 898, 989) ) {
@@ -760,6 +794,16 @@ int main()
 		printMulQuest(va);
 	}
 #endif
+	if( true ) {
+		std::vector<std::string> va0, va;
+		if( genDivOnly1(va0, va, 121, 212, 2) ) {
+			printDivQuest(va0);
+			printDivQuest(va);
+		} else {
+			printDivQuest(va0);
+			cout << "failed to gen quest.\n";
+		}
+	}
 	//
     std::cout << "OK\n";
 }
