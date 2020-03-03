@@ -171,6 +171,10 @@ void test_checkMul()
 {
 	vector<string>vs1 = {"11", "11", "11", "11", "121"}; assert( checkMul(vs1) );
 	vector<string>vs2 = {"55", "55", "275", "275", "3025"}; assert( checkMul(vs1) );
+	vector<string>vs3 = {"120", "74", "*8*", "8**", "8*8*"};
+	assert( checkMul(vs3) );
+	vector<string>vs4 = {"140", "62", "*8*", "8**", "8*8*"};
+	assert( checkMul(vs4) );
 }
 bool solveMul(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
 {
@@ -390,19 +394,22 @@ void genAdd(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, 
 	vs0 = vs;
 	removeGreedyAdd(vs);
 }
-bool isUniqMul(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
+//	row行、col文字目の次から決めていく
+//	'*' を見つけた場合は '0' ～ '9' を順に入れて、再帰コール。ただし先頭桁に '0' は入らない
+//	'*' 以外はスキップ、A*B が確定した時点で解チェック
+void isUniqMul(vector<string> &vs, int row, int col)
 {
 	for (;;) {
 		auto ch = vs[row][++col];
 		if( ch == '*' ) {
-			for (ch = '1'; ch <= '9'; ++ch) {
+			for (ch = !col ? '1' : '0'; ch <= '9'; ++ch) {
 				vs[row][col] = ch;
 				isUniqMul(vs, row, col);
 				if( g_cnt > 1 )		//	ユニークで無い場合
-					return false;
+					return;
 			}
 			vs[row][col] = '*';
-			return false;		//	解無し
+			return;		//	解無し
 		}
 		if( ch >= '0' && ch <= '9' ) continue;
 		if( ch == '\0' ) {
@@ -411,14 +418,13 @@ bool isUniqMul(vector<string> &vs, int row, int col)		//	row行、col文字目�
 				continue;
 			}
 			//	A * B が確定した場合
-			if( !checkMul(vs /*, false*/) )
-				return false;
-			if( ++g_cnt > 1 )	//	ユニークでない場合
-				return false;
-			else
-				return true;
+			//if( vs[0] == "120" && vs[1] == "74" || vs[0] == "140" && vs[1] == "62" )
+			//	cout << vs[0] << " * " << vs[1] << "\n";
+			if( checkMul(vs /*, false*/) ) {		//	解として成立している場合
+				++g_cnt;
+			}
+			return;
 		}
-		//	上記以外の文字はスキップ
 	}
 }
 bool isUniqMul(const vector<string> &vs0)
@@ -670,11 +676,17 @@ bool genDivOnly1(std::vector<std::string>& vs0, std::vector<std::string>& vs, in
 	}
 	return false;
 }
+void test_uniqMul()
+{
+	vector<string>vs1 = {"***", "**", "*8*", "8**", "8*8*"};
+	assert( !isUniqMul(vs1) );
+}
 int main()
 {
 	test_isMatch();
 	test_checkAdd();
 	test_checkMul();
+	test_uniqMul();
 	//
 #if	0
 	vector<string>vs1 = {"45", "**", "48", "*05"};
@@ -780,6 +792,17 @@ int main()
 		}
 	}
 #endif
+#if	1
+	if( true ) {
+		std::vector<std::string> va0, va;
+		for(;;) {
+			if( genMulOnly1(va0, va, g_mt() % 1000, g_mt() % 100) )
+				break;
+		}
+		printMulQuest(va0);
+		printMulQuest(va);
+	}
+#endif
 #if	0
 	if( true ) {
 		std::vector<std::string> va0, va;
@@ -794,6 +817,7 @@ int main()
 		printMulQuest(va);
 	}
 #endif
+#if	0
 	if( true ) {
 		std::vector<std::string> va0, va;
 		if( genDivOnly1(va0, va, 121, 212, 2) ) {
@@ -804,6 +828,18 @@ int main()
 			cout << "failed to gen quest.\n";
 		}
 	}
+#endif
+#if	0
+	if( true ) {
+		std::vector<std::string> va0, va;
+		for(;;) {
+			if( genDivOnly1(va0, va, g_mt() % 100, g_mt() % 100, g_mt() % 10) )
+				break;
+		}
+		printDivQuest(va0);
+		printDivQuest(va);
+	}
+#endif
 	//
     std::cout << "OK\n";
 }
