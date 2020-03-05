@@ -577,8 +577,7 @@ void isUniqDiv(vector<string> &vs, int row, int col)		//	row行、col文字目�
 				for(char d = '0'; d <= '9'; ++d) {
 					vs.back() = d;
 					if( checkDiv(vs) ) {
-						++g_cnt;
-						break;
+						if (++g_cnt > 1) break;
 					}
 				}
 				vs.back() = '*';
@@ -665,6 +664,7 @@ void genDiv(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, 
 }
 bool genDivOnly1(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B, int R = 0)
 {
+	if (!B) return false;
 	R %= B;
 	const auto astr = to_string(A);
 	vs.clear();
@@ -710,6 +710,8 @@ void test_uniqDiv()
 {
 	vector<string>vs1 = {"*", "**", "7*7", "***", "*"};
 	assert( !isUniqDiv(vs1) );
+	vector<string>vs2 = {"*", "5", "*", "*", "*"};
+	assert( !isUniqDiv(vs2) );
 }
 int main()
 {
@@ -886,11 +888,11 @@ int main()
 		}
 	}
 #endif
-#if	0
+#if	1
 	if( true ) {
 		std::vector<std::string> va0, va;
 		for(;;) {
-			if( genDivOnly1(va0, va, g_mt() % 100, g_mt() % 100, g_mt() % 10) )
+			if( genDivOnly1(va0, va, g_mt() % 10, g_mt() % 100, g_mt() % 10) )
 				break;
 		}
 		printDivQuest(va0);
