@@ -549,7 +549,7 @@ bool genMulOnly1(	std::vector<std::string>& vs0,		//	解答
 	}
 	return false;
 }
-bool isUniqDiv(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
+void isUniqDiv(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
 {
 	for (;;) {
 		auto ch = vs[row][++col];
@@ -558,10 +558,10 @@ bool isUniqDiv(vector<string> &vs, int row, int col)		//	row行、col文字目�
 				vs[row][col] = ch;
 				isUniqDiv(vs, row, col);
 				if( g_cnt > 1 )		//	ユニークで無い場合
-					return false;
+					return;
 			}
 			vs[row][col] = '*';
-			return false;		//	解無し
+			return;		//	解無し
 		}
 		if( ch >= '0' && ch <= '9' ) continue;
 		if( ch == '\0' ) {
@@ -570,12 +570,20 @@ bool isUniqDiv(vector<string> &vs, int row, int col)		//	row行、col文字目�
 				continue;
 			}
 			//	A * B が確定した場合
-			if( !checkDiv(vs /*, false*/) )
-				return false;
-			if( ++g_cnt > 1 )	//	ユニークでない場合
-				return false;
-			else
-				return true;
+			if( vs.back() != "*" ) {
+				if( checkDiv(vs /*, false*/) )
+					++g_cnt;
+			} else {
+				for(char d = '0'; d <= '9'; ++d) {
+					vs.back() = d;
+					if( checkDiv(vs) ) {
+						++g_cnt;
+						break;
+					}
+				}
+				vs.back() = '*';
+			}
+			return;
 		}
 		//	上記以外の文字はスキップ
 	}
@@ -698,12 +706,18 @@ void test_uniqMul()
 	vector<string>vs1 = {"***", "**", "*8*", "8**", "8*8*"};
 	assert( !isUniqMul(vs1) );
 }
+void test_uniqDiv()
+{
+	vector<string>vs1 = {"*", "**", "7*7", "***", "*"};
+	assert( !isUniqDiv(vs1) );
+}
 int main()
 {
 	test_isMatch();
 	test_checkAdd();
 	test_checkMul();
 	test_uniqMul();
+	test_uniqDiv();
 	//
 #if	0
 	vector<string>vs1 = {"45", "**", "48", "*05"};
@@ -786,7 +800,7 @@ int main()
 		printDivQuest(va);
 	}
 #endif
-#if	1
+#if	0
 	if( true ) {
 		std::vector<std::string> va0, va;
 		genAdd(va0, va, 123, 6, 9);
