@@ -19,7 +19,11 @@ public:
 };
 
 random_device g_rd;
+#if	1
 mt19937 g_mt(g_rd());
+#else
+mt19937 g_mt(4);
+#endif
 
 typedef const char cchar;
 
@@ -218,18 +222,18 @@ bool solveMul(std::vector<std::string>& vs)
 */
 void printDivQuest(const vector<string>& vs)
 {
-	int maxlen = vs[1].size() + 1 + vs[2].size();		//	1 for '）'
-	printQuest(vs[0], maxlen);
+	int mxlen = vs[1].size() + 1 + vs[2].size();		//	1 for '）'
+	printQuest(vs[0], mxlen);
 	cout << string(vs[1].size()*2, ' ') << string(vs[2].size()*2 + 2, '-')<< "\n";
 	printQuest(vs[1], 0, false);
 	cout << "）";
 	printQuest(vs[2], 0);
 	for (int i = 3; i != vs.size() - 1; ++i) {
-		printQuest(vs[i], maxlen - (vs.size()-i)/2 + 1);
+		printQuest(vs[i], mxlen - (vs.size()-i)/2 + 1);
 		if( (i%2) == 1 )
 			cout << string(vs[1].size()*2, ' ') << string(vs[2].size()*2 + 2, '-')<< "\n";
 	}
-	printQuest(vs.back(), maxlen);
+	printQuest(vs.back(), mxlen);
 	cout << "\n";
 }
 bool checkDiv(vector<string> &vs , bool fill = false)	//	fill: 答えを埋める
@@ -341,8 +345,20 @@ bool isUniqAdd(const vector<string> &vs0)
 	isUniqAdd(vs, 0, -1);
 	return g_cnt == 1;
 }
-void removeGreedyAdd(vector<string> &vs)
+void removeAdd(vector<string> &vs)
 {
+	int mxlen = 0;	//	最大桁数
+	for(auto& txt: vs)
+		mxlen = max(mxlen, (int)txt.size());
+	int r;
+	for (int i = 0; i < mxlen; ++i) {	//	下から何桁目の数字を空欄にするか
+		do {
+			r = g_mt() % vs.size();		//	何番目の数字を空欄にするか
+		} while ( i >= vs[r].size() );		//	i番目の桁が無い場合は、やり直し
+		int ix = vs[r].size() - i - 1;		//	先頭から ix 番目を空欄にする
+		vs[r][ix] = '*';
+	}
+#if	0
 	for (int i = 0; i != vs[0].size(); ++i) {
 		int r = g_mt() % vs.size();
 		int ix = vs[r].size() - 1 - i;
@@ -350,6 +366,7 @@ void removeGreedyAdd(vector<string> &vs)
 	}
 	if( vs.back().size() > vs[1].size() )
 		vs.back()[0] = '*';
+#endif
 #if	0
 	//	最初に * に出来る位置の一覧を取得し、そこから * にしていく版
 	vector<string> vs2;
@@ -392,7 +409,7 @@ void genAdd(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, 
 	vs.push_back(to_string(C));
 	vs.push_back(to_string(A+B+C));
 	vs0 = vs;
-	removeGreedyAdd(vs);
+	removeAdd(vs);
 }
 //	row行、col文字目の次から決めていく
 //	'*' を見つけた場合は '0' ～ '9' を順に入れて、再帰コール。ただし先頭桁に '0' は入らない
@@ -480,7 +497,7 @@ void removeGreedyMul(vector<string> &vs, double p = 0.0)
 	//	printMul(vs2);
 }
 void genMul(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B,
-			double p)		//	空欄割合
+			double p = 0)		//	空欄割合
 {
 	for (;;) {
 		vs.clear();
@@ -769,7 +786,33 @@ int main()
 		printDivQuest(va);
 	}
 #endif
+#if	1
+	if( true ) {
+		std::vector<std::string> va0, va;
+		genAdd(va0, va, 123, 6, 9);
+		//genAdd(va0, va, g_mt() % 1000, g_mt() % 1000, g_mt() % 1000);
+		printAddQuest(va0);
+		printAddQuest(va);
+	}
+#endif
 	//
+#if	0
+	if( true ) {
+		std::vector<std::string> va0, va;
+		genMul(va0, va, g_mt() % 1000, g_mt() % 1000, 0.3);
+		printMulQuest(va0);
+		printMulQuest(va);
+	}
+#endif
+	//
+#if	0
+	if( true ) {
+		std::vector<std::string> va0, va;
+		genDiv(va0, va, g_mt() % 100, g_mt() % 100, g_mt() % 10, 0.3);
+		printDivQuest(va0);
+		printDivQuest(va);
+	}
+#endif
 #if	0
 	if( true ) {
 		std::vector<std::string> va0, va;
@@ -792,11 +835,11 @@ int main()
 		}
 	}
 #endif
-#if	1
+#if	0
 	if( true ) {
 		std::vector<std::string> va0, va;
 		for(;;) {
-			if( genMulOnly1(va0, va, g_mt() % 1000, g_mt() % 100) )
+			if( genMulOnly1(va0, va, g_mt() % 1000, g_mt() % 1000) )
 				break;
 		}
 		printMulQuest(va0);
