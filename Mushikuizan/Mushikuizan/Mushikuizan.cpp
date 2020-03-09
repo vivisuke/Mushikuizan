@@ -6,7 +6,7 @@
 
 using namespace std;
 
-struct Pos {
+struct Pos {		//	行・桁 構造体
 public:
 	Pos(int row = 0, int col = 0)
 		: m_row(row)
@@ -39,7 +39,7 @@ bool isMatchEx(const string &t, int v)		//	計算結果(t) と v がマッチし
 	const auto vs = to_string(v);
 	if( vs.size() != t.size() ) return false;
 	for (int i = 0; i != t.size(); ++i) {
-		if( t[i] != '*' && t[i] != vs[i] )
+		if( t[i] != '*' && t[i] != vs[i] )		//	'*' はすべての文字とマッチ
 			return false;
 	}
 	return true;
@@ -53,7 +53,7 @@ void test_isMatch()
 	assert( isMatch("123", 123) );
 	assert( isMatch("0123", 123) );
 }
-//		vs[0] + vs[1] + ...vs[vs.size() - 2] が vs.vs[vs.size() - 1] と等しいかチェック
+//		vs[0] + vs[1] + ...vs[vs.size() - 2] が vs[vs.size() - 1] と等しいかチェック
 bool checkAdd(vector<string> &vs)
 {
 	assert( vs.size() >= 3 );
@@ -71,6 +71,7 @@ void test_checkAdd()
 	vector<string>vs4 = {"99", "34", "33"}; assert( !checkAdd(vs4) );
 	vector<string>vs5 = {"12", "34", "56", "102"}; assert( checkAdd(vs5) );
 }
+//	
 void printQuest(const string& txt, int len, bool nl = true)
 {
 	static cchar *digTxt[] = {"０", "１", "２", "３", "４", "５", "６", "７", "８", "９", };
@@ -83,22 +84,26 @@ void printQuest(const string& txt, int len, bool nl = true)
 	if( nl )
 		cout << "\n";
 }
-bool solveAdd(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
+//	加算問題ソルバー
+//		row行、col文字目の次から順に数字を決めていく
+//		すべての空欄を埋めたら、式が成立しているかチェック
+//		解はひとつだけという前提なので、解をひとつ発見したら探索終了
+bool solveAdd(vector<string> &vs, int row, int col)
 {
 	for (;;) {
-		auto ch = vs[row][++col];
-		if( ch == '*' ) {
+		auto ch = vs[row][++col];		//	次の桁に移動し、その文字を ch に
+		if( ch == '*' ) {	//	'*'（空欄）を見つけたら 0～9 を入れて探索、ただし最上位桁に 0 は入れない
 			for (ch = !col ? '1' : '0'; ch <= '9'; ++ch) {
 				vs[row][col] = ch;
-				if( solveAdd(vs, row, col) )
+				if( solveAdd(vs, row, col) )	//	解をひとつ発見したら終了
 					return true;
 			}
-			vs[row][col] = '*';
+			vs[row][col] = '*';		//	元に戻す
 			return false;		//	解無し
 		}
-		if( ch >= '0' && ch <= '9' ) continue;
-		if( ch == '\0' ) {
-			if( ++row != vs.size() ) {
+		if( ch >= '0' && ch <= '9' ) continue;	//	数字が入っている部分はスキップ
+		if( ch == '\0' ) {		//	行末に達した場合
+			if( ++row != vs.size() ) {		//	まだ最後に達していない場合
 				col = -1;
 				continue;
 			}
@@ -108,9 +113,10 @@ bool solveAdd(vector<string> &vs, int row, int col)		//	row行、col文字目の
 		//	上記以外の文字はスキップ
 	}
 }
+//	加算問題ソルバー
 bool solveAdd(std::vector<std::string>& vs)
 {
-	return solveAdd(vs, 0, -1);
+	return solveAdd(vs, 0, -1);		//	最初の行・桁から探索開始
 }
 void printAddQuest(const vector<string>& vs)
 {
@@ -217,7 +223,7 @@ bool solveMul(std::vector<std::string>& vs)
 	　－－－－－
 			R
 
-	C/B = A・・・R		or A*B + R = C
+	C/B = A…R		or		A*B + R = C
 
 */
 void printDivQuest(const vector<string>& vs)
@@ -236,9 +242,12 @@ void printDivQuest(const vector<string>& vs)
 	printQuest(vs.back(), mxlen);
 	cout << "\n";
 }
+//	割り算として成立しているかどうかをチェック
+//	A, B, R（商, 除数, 余り）は確定してるものとする
 bool checkDiv(vector<string> &vs , bool fill = false)	//	fill: 答えを埋める
 {
-	const auto &astr = vs[0];
+	//	C / B = A … R（被乗数 / 除数 = 商 … 余り）
+	const auto &astr = vs[0];	//	商文字列
 	int A = atoi(astr.c_str());		//	商
 	int B = atoi(vs[1].c_str());	//	除数
 	int R = atoi(vs.back().c_str());		//	余り
@@ -283,7 +292,7 @@ bool solveDiv(vector<string> &vs, int row, int col, bool fill = true)		//	row行
 		if( row == vs.size() ) //	A, B, R が確定した場合
 			return checkDiv(vs, fill);
 		if (row >= 2 && row < vs.size() - 1) {
-			++row;
+			row = vs.size() - 1;
 			continue;		//	商、計算途中はスキップ
 		}
 		auto ch = vs[row][++col];
@@ -636,7 +645,8 @@ void removeGreedyDiv(vector<string> &vs, double p = 0)
 }
 void genDiv(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B, int R, double p)
 {
-	R %= B;
+	if( !B ) return;
+	R %= B;	//	R >= B の場合対応
 	const auto astr = to_string(A);
 	for(;;) {
 		vs.clear();
@@ -665,7 +675,7 @@ void genDiv(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, 
 bool genDivOnly1(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B, int R = 0)
 {
 	if (!B) return false;
-	R %= B;
+	R %= B;	//	R >= B の場合対応
 	const auto astr = to_string(A);
 	vs.clear();
 	vs.push_back(astr);
@@ -892,7 +902,7 @@ int main()
 	if( true ) {
 		std::vector<std::string> va0, va;
 		for(;;) {
-			if( genDivOnly1(va0, va, g_mt() % 10, g_mt() % 100, g_mt() % 10) )
+			if( genDivOnly1(va0, va, g_mt() % 1000, g_mt() % 100, g_mt() % 10) )
 				break;
 		}
 		printDivQuest(va0);

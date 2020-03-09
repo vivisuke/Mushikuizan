@@ -36,4 +36,10 @@ Mushikuizan.spr.txt
 							    □
 							  ----
 							    □
-● C 03/06             ToDo 
+● D 03/06             問題 除算問題生成：余りが複数桁に対応していない
+● C 03/07             ToDo 
+● C 03/07             ToDo 
+● C 03/07             ToDo 
+● C 03/07             ToDo 
+● C 03/07             ToDo 
+● C 03/07             ToDo 
