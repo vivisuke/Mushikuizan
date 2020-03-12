@@ -37,9 +37,10 @@ Mushikuizan.spr.txt
 							  ----
 							    □
 ● D 03/06             問題 除算問題生成：余りが複数桁に対応していない
-● C 03/07             ToDo 
-● C 03/07             ToDo 
-● C 03/07             ToDo 
-● C 03/07             ToDo 
-● C 03/07             ToDo 
-● C 03/07             ToDo 
+◎ C 03/11 03/12 0.001 ToDo SEND + MORE = MANEY 形式対応？
+● C 03/12             ToDo 
+● C 03/12             ToDo 
+● C 03/12             ToDo 
+● C 03/12             ToDo 
+● C 03/12             ToDo 
+● C 03/12             ToDo 

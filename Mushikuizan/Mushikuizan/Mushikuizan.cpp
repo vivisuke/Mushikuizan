@@ -28,6 +28,8 @@ mt19937 g_mt(4);
 typedef const char cchar;
 
 int g_cnt = 0;		//	解の数
+char g_alphabet[26];		//	'A'-'Z' の値（'0'～'9'）、-1 for 未使用
+bool g_used[10];			//	’A'-'Z' に 0-9 を使用済みかのフラグ
 
 bool isMatch(const string &t, int v)		//	計算結果(t) と v がマッチしているか？
 {
@@ -39,8 +41,20 @@ bool isMatchEx(const string &t, int v)		//	計算結果(t) と v がマッチし
 	const auto vs = to_string(v);
 	if( vs.size() != t.size() ) return false;
 	for (int i = 0; i != t.size(); ++i) {
-		if( t[i] != '*' && t[i] != vs[i] )		//	'*' はすべての文字とマッチ
-			return false;
+		//if( t[i] != '*' && t[i] != vs[i] )		//	'*' はすべての文字とマッチ
+		//	return false;
+		if( t[i] == '*' ) {
+		} else if( isupper(t[i]) ) {
+			if( g_alphabet[t[i] - 'A'] >= 0 ) {
+				if( g_alphabet[t[i] - 'A'] != vs[i] )
+					return false;
+			} else {
+				//	undone:	要検索
+			}
+		} else {
+			if( t[i] != vs[i] )
+				return false;
+		}
 	}
 	return true;
 }
@@ -75,10 +89,14 @@ void test_checkAdd()
 void printQuest(const string& txt, int len, bool nl = true)
 {
 	static cchar *digTxt[] = {"０", "１", "２", "３", "４", "５", "６", "７", "８", "９", };
+	static cchar *alphabetTxt[] = {"Ａ", "Ｂ", "Ｃ", "Ｄ", "Ｅ", "Ｆ", "Ｇ", "Ｈ", "Ｉ", "Ｊ",
+												"Ｋ", "Ｌ", "Ｍ", "Ｎ", "Ｏ", "Ｐ", "Ｑ", "Ｒ", "Ｓ", "Ｔ",
+												"Ｕ", "Ｖ", "Ｗ", "Ｘ", "Ｙ", "Ｚ", };
 	if( len > txt.size() )
 		cout << string((len-txt.size())*2, ' ');
 	for(auto ch: txt) {
 		if( isdigit(ch) ) cout << digTxt[ch - '0'];
+		else if( isupper(ch) ) cout << alphabetTxt[ch - 'A'];
 		else cout << "□";
 	}
 	if( nl )
@@ -95,8 +113,8 @@ bool solveAdd(vector<string> &vs, int row, int col)
 		if( ch == '*' ) {	//	'*'（空欄）を見つけたら 0～9 を入れて探索、ただし最上位桁に 0 は入れない
 			for (ch = !col ? '1' : '0'; ch <= '9'; ++ch) {
 				vs[row][col] = ch;
-				if( solveAdd(vs, row, col) )	//	解をひとつ発見したら終了
-					return true;
+				if( solveAdd(vs, row, col) )	//	自分自身を再帰コール
+					return true;		//	解をひとつ発見したら終了
 			}
 			vs[row][col] = '*';		//	元に戻す
 			return false;		//	解無し
@@ -118,6 +136,60 @@ bool solveAdd(std::vector<std::string>& vs)
 {
 	return solveAdd(vs, 0, -1);		//	最初の行・桁から探索開始
 }
+bool solveAddAlphabet(vector<string> &vs, int row, int col)
+{
+	for (;;) {
+		auto ch = vs[row][++col];		//	次の桁に移動し、その文字を ch に
+		if( ch == '*' ) {	//	'*'（空欄）を見つけたら 0～9 を入れて探索、ただし最上位桁に 0 は入れない
+			for (char ch = !col ? '1' : '0'; ch <= '9'; ++ch) {
+				vs[row][col] = ch;
+				if( solveAddAlphabet(vs, row, col) )	//	自分自身を再帰コール
+					return true;		//	解をひとつ発見したら終了
+			}
+			vs[row][col] = '*';		//	元に戻す
+			return false;		//	解無し
+		}
+		if( ch >= 'A' && ch <= 'Z' ) {
+			if( g_alphabet[ch - 'A'] >= 0 ) {
+				vs[row][col] = g_alphabet[ch - 'A'];
+				if( solveAddAlphabet(vs, row, col) )	//	自分自身を再帰コール
+					return true;		//	解をひとつ発見したら終了
+				vs[row][col] = ch;		//	元に戻す
+				return false;		//	解無し
+			}
+			for (char c = !col ? '1' : '0'; c <= '9'; ++c) {
+				if( !g_used[c - '0'] ) {
+					g_alphabet[ch - 'A'] = c;
+					g_used[c - '0'] = true;
+					vs[row][col] = c;
+					if( solveAddAlphabet(vs, row, col) )	//	自分自身を再帰コール
+						return true;		//	解をひとつ発見したら終了
+					g_used[c - '0'] = false;
+				}
+			}
+			g_alphabet[ch - 'A'] = -1;
+			vs[row][col] =ch;		//	元に戻す
+			return false;		//	解無し
+		}
+		if( ch >= '0' && ch <= '9' ) continue;	//	数字が入っている部分はスキップ
+		if( ch == '\0' ) {		//	行末に達した場合
+			if( ++row != vs.size() ) {		//	まだ最後に達していない場合
+				col = -1;
+				continue;
+			}
+			//	全てが確定した場合
+			return checkAdd(vs /*, true*/);
+		}
+		//	上記以外の文字はスキップ
+	}
+}
+//	アルファベット対応加算問題ソルバー
+bool solveAddAlphabet(std::vector<std::string>& vs)
+{
+	for(auto& x: g_alphabet) x = -1;
+	for(auto& x: g_used) x = false;
+	return solveAddAlphabet(vs, 0, -1);		//	最初の行・桁から探索開始
+}
 void printAddQuest(const vector<string>& vs)
 {
 	int mxlen = 0;
@@ -133,7 +205,7 @@ void printAddQuest(const vector<string>& vs)
 	cout << "\n";
 }
 //		A*B
-bool checkMul(vector<string> &vs , bool fill = false)	//	fill: 答えを埋める
+bool checkMul(vector<string> &vs , bool fill = false)	//	fill: 答えを埋めるかどうか
 {
 	int A = atoi(vs[0].c_str());		//	Aの値
 	const auto &bstr = vs[1];		//	B文字列
@@ -149,7 +221,6 @@ bool checkMul(vector<string> &vs , bool fill = false)	//	fill: 答えを埋め�
 	int B = atoi(bstr.c_str());			//	Bの値
 	if( !isMatchEx(vs[ln], B * A) )
 		return false;
-#if	1
 	if( fill ) {
 		ln = 2;
 		for (int i = bstr.size(); --i >= 0; ++ln) {
@@ -158,7 +229,33 @@ bool checkMul(vector<string> &vs , bool fill = false)	//	fill: 答えを埋め�
 		}
 		vs[ln] = to_string(B*A);
 	}
-#endif
+	return true;
+}
+//		A*B
+bool checkMulAlphabet(vector<string> &vs , bool fill = false)	//	fill: 答えを埋めるかどうか
+{
+	int A = atoi(vs[0].c_str());		//	Aの値
+	const auto &bstr = vs[1];		//	B文字列
+	int ln = 2;
+	for (int i = bstr.size(); --i >= 0; ++ln) {	//	Bの下の桁から順に掛け算を行う
+		if( bstr[i] != '*' ) {
+			int d = bstr[i] - '0';
+			//auto s = to_string(d*A);
+			if( !d*A || !isMatchEx(vs[ln], d*A) )		//	先頭の数字は０以外、vs[ln] は '*', 'A'-'Z' を含んでいてもよい
+				return false;
+		}
+	}
+	int B = atoi(bstr.c_str());			//	Bの値
+	if( !isMatchEx(vs[ln], B * A) )
+		return false;
+	if( fill ) {
+		ln = 2;
+		for (int i = bstr.size(); --i >= 0; ++ln) {
+			int d = bstr[i] - '0';
+			vs[ln] = to_string(d*A);
+		}
+		vs[ln] = to_string(B*A);
+	}
 	return true;
 }
 void printMulQuest(const vector<string>& vs)
@@ -214,6 +311,66 @@ bool solveMul(vector<string> &vs, int row, int col)		//	row行、col文字目の
 bool solveMul(std::vector<std::string>& vs)
 {
 	return solveMul(vs, 0, -1);
+}
+bool solveMulAlphabet(vector<string> &vs, int row, int col)		//	row行、col文字目の次から決めていく
+{
+	for (;;) {
+		auto ch = vs[row][++col];
+		if( ch == '*' ) {
+			for (char ch = !col ? '1' : '0'; ch <= '9'; ++ch) {
+				vs[row][col] = ch;
+				if( solveMulAlphabet(vs, row, col) )
+					return true;
+			}
+			vs[row][col] = '*';
+			return false;		//	解無し
+		}
+		if( ch >= 'A' && ch <= 'Z' ) {
+			if( g_alphabet[ch - 'A'] >= 0 ) {
+				vs[row][col] = g_alphabet[ch - 'A'];
+				if( solveMulAlphabet(vs, row, col) )	//	自分自身を再帰コール
+					return true;		//	解をひとつ発見したら終了
+				vs[row][col] = ch;		//	元に戻す
+				return false;		//	解無し
+			}
+			for (char c = !col ? '1' : '0'; c <= '9'; ++c) {
+				if( !g_used[c - '0'] ) {
+					g_alphabet[ch - 'A'] = c;
+					g_used[c - '0'] = true;
+					vs[row][col] = c;
+					if( solveMulAlphabet(vs, row, col) )	//	自分自身を再帰コール
+						return true;		//	解をひとつ発見したら終了
+					g_used[c - '0'] = false;
+				}
+			}
+			g_alphabet[ch - 'A'] = -1;
+			vs[row][col] =ch;		//	元に戻す
+			return false;		//	解無し
+		}
+		if( ch >= '0' && ch <= '9' ) continue;
+		if( ch == '\0' ) {
+			if( ++row < 2 ) {
+				col = -1;
+				continue;
+			}
+			//	A * B が確定した場合
+			char svAlphabet[26];
+			bool svUsed[10];
+			for(int i = 0; i != 26; ++i) svAlphabet[i] = g_alphabet[i];
+			for(int i = 0; i != 10; ++i) svUsed[i] = g_used[i];
+			auto rc = checkMulAlphabet(vs, true);
+			for(int i = 0; i != 26; ++i) g_alphabet[i] = svAlphabet[i];
+			for(int i = 0; i != 10; ++i) g_used[i] = svUsed[i];
+			return rc;
+		}
+		//	上記以外の文字はスキップ
+	}
+}
+bool solveMulAlphabet(std::vector<std::string>& vs)
+{
+	for(auto& x: g_alphabet) x = -1;
+	for(auto& x: g_used) x = false;
+	return solveMulAlphabet(vs, 0, -1);
 }
 /*
 	　　A
@@ -898,7 +1055,7 @@ int main()
 		}
 	}
 #endif
-#if	1
+#if	0
 	if( true ) {
 		std::vector<std::string> va0, va;
 		for(;;) {
@@ -909,6 +1066,22 @@ int main()
 		printDivQuest(va);
 	}
 #endif
+#if	0
+	vector<string>vs1 = {"SEND", "MORE", "MONEY"};
+	printAddQuest(vs1);
+	if( solveAddAlphabet(vs1) )
+		printAddQuest(vs1);
+	else
+		cout << "can't solve\n";
+	//
+#endif
+	//vector<string>vs1 = {"ABA", "ABA", "CAC", "ABA", "CAC", "CCDCC"};
+	vector<string>vs1 = {"ABCD", "ABCD", "****D", "****C", "****B", "****A", "*******D"};
+	printMulQuest(vs1);
+	if( solveMulAlphabet(vs1) )
+		printMulQuest(vs1);
+	else
+		cout << "can't solve\n";
 	//
     std::cout << "OK\n";
 }
