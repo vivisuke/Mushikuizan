@@ -19,7 +19,7 @@ public:
 };
 
 random_device g_rd;
-#if	1
+#if	0
 mt19937 g_mt(g_rd());
 #else
 mt19937 g_mt(4);
@@ -214,7 +214,7 @@ bool checkMul(vector<string> &vs , bool fill = false)	//	fill: 答えを埋め�
 		if( bstr[i] != '*' ) {
 			int d = bstr[i] - '0';
 			//auto s = to_string(d*A);
-			if( !d*A || !isMatchEx(vs[ln], d*A) )		//	先頭の数字は０以外、vs[ln] は '*' を含んでいてもよい
+			if( !isMatchEx(vs[ln], d*A) )		//	vs[ln] は '*' を含んでいてもよい
 				return false;
 		}
 	}
@@ -617,70 +617,70 @@ bool isUniqMul(const vector<string> &vs0)
 	isUniqMul(vs, 0, -1);
 	return g_cnt == 1;
 }
-void removeGreedyMul(vector<string> &vs, double p = 0.0)
+//	貪欲法により可能な数字をできるだけ消す
+void removeGreedyMul(vector<string> &vs,
+									double p = 0.0)		//	残す数字割合、p が大きいほど数字が残る
 {
 	//	最初に * に出来る位置の一覧を取得し、そこから * にしていく版
-	vector<string> vs2;
-	if( isUniqMul(vs) )
-		vs2 = vs;
-	int cnt = 0;	//	全文字数
+	//vector<string> vs2;
+	//if( isUniqMul(vs) )
+	//	vs2 = vs;
+	int cnt = 0;
 	for(const auto &s : vs)
-		cnt += s.size();
-	int limit = (int)(cnt * p + 0.5);
-	cnt -= limit;
+		cnt += s.size();	//	全文字数計算
+	int limit = round(cnt * p);
+	cnt -= limit;		//	cnt: 消すべき文字数
 	for (;;) {
 		vector<Pos>	vpos;	//	虫食いに出来る位置リスト
 		int row = 0;
 		int col = 0;
 		for (;;) {
 			if( vs[row][col] == '\0' ) {
-				if( ++row == vs.size() )		//	-1 for 最後の余りは消さない
+				if( ++row == vs.size() )	//	スキャン終わり
 					break;	
 				col = 0;
 				continue;
 			}
 			auto ch = vs[row][col];
 			if( ch >= '0' && ch <= '9' ) {
-				vs[row][col] = '*';
-				if( isUniqMul(vs) )
+				vs[row][col] = '*';		//	row, col の文字を空欄にし、
+				if( isUniqMul(vs) )		//	それがユニーク解を持つかチェック
 					vpos.emplace_back(row, col);
 				vs[row][col] = ch;
 			}
 			++col;
 		}
 		//vpos.pop_back();		//	最後の余りは消さない
-		if( vpos.empty() )
+		if( vpos.empty() )		//	消せる数字が無くなった場合
 			break;
-		int r = g_mt() % vpos.size();
-		row = vpos[r].m_row;
-		col = vpos[r].m_col;
-		vs[row][col] = '*';
-		//printMul(vs);
-		vs2 = vs;
+		int r = g_mt() % vpos.size();		//	消す位置をランダムに決める
+		//row = vpos[r].m_row;
+		//col = vpos[r].m_col;
+		vs[vpos[r].m_row][vpos[r].m_col] = '*';
+		//vs2 = vs;
 		if( --cnt <= 0 ) break;
 	}
-	//if( !vs2.empty() )
-	//	printMul(vs2);
 }
+//	A*B を与えられ、貪欲法により問題を生成
 void genMul(std::vector<std::string>& vs0, std::vector<std::string>& vs, int A, int B,
 			double p = 0)		//	空欄割合
 {
 	for (;;) {
 		vs.clear();
-		vs.push_back(to_string(A));
-		vs.push_back(to_string(B));
+		vs.push_back(to_string(A));		//	被乗数
+		vs.push_back(to_string(B));		//	乗数
 		int b2 = B;
 		while( b2 ) {
 			int t = b2 % 10;
-			vs.push_back(to_string(A*t));
+			vs.push_back(to_string(A*t));		//	計算途中結果
 			b2 /= 10;
 		}
-		vs.push_back(to_string(A*B));
+		vs.push_back(to_string(A*B));			//	乗算結果
 		vs0 = vs;
-		removeGreedyMul(vs, p);
+		removeGreedyMul(vs, p);					//	貪欲法により可能な数字をできるだけ消す
 		int cnt = count(vs[0].begin(), vs[0].end(), '*') +
 					count(vs[1].begin(), vs[1].end(), '*');
-		if( cnt >= 2 ) return;
+		if( cnt >= 2 ) return;						//	空欄がひとつだけの場合はやり直し
 	}
 }
 bool genMulOnly1(	std::vector<std::string>& vs0,		//	解答
@@ -870,6 +870,8 @@ bool genDivOnly1(std::vector<std::string>& vs0, std::vector<std::string>& vs, in
 }
 void test_uniqMul()
 {
+	vector<string>vs2 = {"*4", "30", "0", "282", "2820"};
+	assert( isUniqMul(vs2) );
 	vector<string>vs1 = {"***", "**", "*8*", "8**", "8*8*"};
 	assert( !isUniqMul(vs1) );
 }
@@ -979,10 +981,10 @@ int main()
 	}
 #endif
 	//
-#if	0
+#if	1
 	if( true ) {
 		std::vector<std::string> va0, va;
-		genMul(va0, va, g_mt() % 1000, g_mt() % 1000, 0.3);
+		genMul(va0, va, g_mt() % 100, g_mt() % 100, 0.3);
 		printMulQuest(va0);
 		printMulQuest(va);
 	}
@@ -1075,6 +1077,7 @@ int main()
 		cout << "can't solve\n";
 	//
 #endif
+#if	0
 	//vector<string>vs1 = {"ABA", "ABA", "CAC", "ABA", "CAC", "CCDCC"};
 	vector<string>vs1 = {"ABCD", "ABCD", "****D", "****C", "****B", "****A", "*******D"};
 	printMulQuest(vs1);
@@ -1082,6 +1085,7 @@ int main()
 		printMulQuest(vs1);
 	else
 		cout << "can't solve\n";
+#endif
 	//
     std::cout << "OK\n";
 }
